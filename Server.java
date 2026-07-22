@@ -27,7 +27,11 @@ public class Server {
         if (Files.exists(file)) {
             byte[] data = Files.readAllBytes(file);
 
-            ex.getResponseHeaders().set("Content-Type", "text/html; charset=UTF-8");
+            String type = path.endsWith(".html") ? "text/html; charset=utf-8"
+                : path.endsWith(".js") ? "application/javascript; charset=utf-8"
+                : path.endsWith(".css") ? "text/css; charset=utf-8"
+                : "text/plain; charset=utf-8";
+            ex.getResponseHeaders().set("Content-Type", type);
             ex.sendResponseHeaders(200, data.length);
 
             try (OutputStream os = ex.getResponseBody()) {
