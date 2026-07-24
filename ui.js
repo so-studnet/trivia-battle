@@ -1,12 +1,24 @@
 import { GameEngine, NetworkClient } from "./gameEngine.js";
 
-const engine = new GameEngine(3);
-const net = new NetworkClient(engine);
+// ゲーム画面(既存)の制御ロジック。
+// ルーム画面(room.js)側で対戦準備が整ったタイミングで initGame() を呼び出して開始する。
+// ネットワーク対戦を実装する際は NetworkClient を実際の通信クライアントに差し替える想定。
 
+let engine = null;
+let net = null;
 let activeViewer = "A";
+let initialized = false;
 
-net.on("update", (state) => render(state));
-render(net.getState());
+export function initGame() {
+  if (initialized) return;
+  initialized = true;
+
+  engine = new GameEngine(3);
+  net = new NetworkClient(engine);
+
+  net.on("update", (state) => render(state));
+  render(net.getState());
+}
 
 function render(state) {
   if (state.phase === "GAME_OVER") {

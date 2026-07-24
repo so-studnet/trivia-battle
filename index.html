@@ -9,45 +9,122 @@
 <body>
 <div id="app">
 
-  <header id="score-board">
-    <div class="player-score" id="score-a">Aさん: 0</div>
-    <div class="target-info">先取 <span id="target-score">3</span> 点で勝利</div>
-    <div class="player-score" id="score-b">Bさん: 0</div>
-  </header>
+  <!-- ============ タイトル / ルーム選択画面 ============ -->
+  <section id="screen-title" class="screen">
+    <div class="panel title-panel">
+      <h1 class="app-title">雑学カードバトル</h1>
+      <p class="app-subtitle">ルームを作って、友だちとオンライン対戦しよう</p>
 
-  <main id="game-screen">
-    <p id="turn-indicator"></p>
-
-    <section id="phase-select" class="phase hidden">
-      <p class="phase-message">出題する雑学を1つ選んでください</p>
-      <div id="card-row" class="card-row"></div>
-    </section>
-
-    <section id="phase-guess" class="phase hidden">
-      <p class="phase-message">この雑学は本当？ウソ？</p>
-      <div class="card card-large" id="guess-card"></div>
-      <div class="guess-buttons">
-        <button id="btn-true" class="btn btn-true" type="button">本当</button>
-        <button id="btn-false" class="btn btn-false" type="button">ウソ</button>
+      <div class="field-group">
+        <label for="input-player-name">あなたの名前</label>
+        <input type="text" id="input-player-name" maxlength="10" placeholder="プレイヤー名" value="プレイヤー1">
       </div>
-    </section>
 
-    <section id="phase-turn-result" class="phase hidden">
-      <h2 id="result-heading"></h2>
-      <div class="card card-large" id="result-card"></div>
-      <p id="result-answer" class="result-answer"></p>
-      <p id="result-explanation" class="explanation"></p>
-      <button id="btn-next-turn" class="btn" type="button">次のターンへ</button>
-    </section>
-  </main>
+      <div class="title-actions">
+        <button id="btn-create-room" class="btn btn-primary btn-block" type="button">ルームを作成する</button>
 
-  <section id="result-screen" class="hidden">
-    <h1 id="winner-heading"></h1>
-    <p id="final-score"></p>
-    <h3>この対戦で出題された雑学</h3>
-    <div id="history-list"></div>
-    <button id="btn-restart" class="btn" type="button">もう一度あそぶ</button>
+        <div class="divider"><span>または</span></div>
+
+        <div class="join-row">
+          <input type="text" id="input-room-code" maxlength="6" placeholder="ルームコードを入力" autocomplete="off">
+          <button id="btn-join-room" class="btn btn-outline" type="button">参加する</button>
+        </div>
+      </div>
+
+      <p id="title-error" class="field-error hidden"></p>
+    </div>
   </section>
+
+  <!-- ============ ルーム待機画面 ============ -->
+  <section id="screen-room" class="screen hidden">
+    <div class="panel room-panel">
+      <button id="btn-leave-room" class="link-btn" type="button">&larr; タイトルに戻る</button>
+
+      <h2 class="room-heading">対戦ルーム</h2>
+
+      <div class="room-code-box">
+        <span class="room-code-label">ルームコード</span>
+        <span id="room-code-value" class="room-code-value">------</span>
+        <button id="btn-copy-code" class="btn btn-small btn-outline" type="button">コピー</button>
+      </div>
+
+      <div id="room-status" class="room-status">
+        <span class="spinner" id="room-spinner"></span>
+        <span id="room-status-text">相手の参加を待っています…</span>
+      </div>
+
+      <div class="player-slots">
+        <div class="player-slot" id="slot-host">
+          <div class="player-avatar" id="slot-host-avatar">A</div>
+          <div class="player-info">
+            <p class="player-name" id="slot-host-name">-</p>
+            <p class="player-role">ホスト</p>
+          </div>
+          <span class="ready-badge" id="slot-host-ready">準備中</span>
+        </div>
+        <div class="player-slot is-empty" id="slot-guest">
+          <div class="player-avatar" id="slot-guest-avatar">B</div>
+          <div class="player-info">
+            <p class="player-name" id="slot-guest-name">未参加</p>
+            <p class="player-role">ゲスト</p>
+          </div>
+          <span class="ready-badge" id="slot-guest-ready">未参加</span>
+        </div>
+      </div>
+
+      <div class="room-actions">
+        <button id="btn-toggle-ready" class="btn btn-true" type="button">準備完了にする</button>
+        <button id="btn-start-game" class="btn btn-primary hidden" type="button">対戦を開始する</button>
+      </div>
+
+      <button id="btn-demo-opponent" class="link-btn demo-link" type="button">［動作確認用］相手を参加させる</button>
+    </div>
+  </section>
+
+  <!-- ============ ゲーム画面（既存） ============ -->
+  <div id="screen-game" class="screen hidden">
+
+    <header id="score-board">
+      <div class="player-score" id="score-a">Aさん: 0</div>
+      <div class="target-info">先取 <span id="target-score">3</span> 点で勝利</div>
+      <div class="player-score" id="score-b">Bさん: 0</div>
+    </header>
+
+    <main id="game-screen">
+      <p id="turn-indicator"></p>
+
+      <section id="phase-select" class="phase hidden">
+        <p class="phase-message">出題する雑学を1つ選んでください</p>
+        <div id="card-row" class="card-row"></div>
+      </section>
+
+      <section id="phase-guess" class="phase hidden">
+        <p class="phase-message">この雑学は本当？ウソ？</p>
+        <div class="card card-large" id="guess-card"></div>
+        <div class="guess-buttons">
+          <button id="btn-true" class="btn btn-true" type="button">本当</button>
+          <button id="btn-false" class="btn btn-false" type="button">ウソ</button>
+        </div>
+      </section>
+
+      <section id="phase-turn-result" class="phase hidden">
+        <h2 id="result-heading"></h2>
+        <div class="card card-large" id="result-card"></div>
+        <p id="result-answer" class="result-answer"></p>
+        <p id="result-explanation" class="explanation"></p>
+        <button id="btn-next-turn" class="btn" type="button">次のターンへ</button>
+      </section>
+    </main>
+
+    <section id="result-screen" class="hidden">
+      <h1 id="winner-heading"></h1>
+      <p id="final-score"></p>
+      <h3>この対戦で出題された雑学</h3>
+      <div id="history-list"></div>
+      <button id="btn-restart" class="btn" type="button">もう一度あそぶ</button>
+    </section>
+
+  </div>
 
   <div id="card-modal" class="modal hidden">
     <div class="modal-backdrop"></div>
@@ -70,5 +147,6 @@
 
 <script type="module" src="gameEngine.js"></script>
 <script type="module" src="ui.js"></script>
+<script type="module" src="room.js"></script>
 </body>
 </html>
