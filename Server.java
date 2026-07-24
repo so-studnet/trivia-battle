@@ -4,17 +4,20 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.Map;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 public class Server {
 
-
+    private static Map<String, Room> rooms = new HashMap<>();
     
     public static void main(String[] args) throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
         server.createContext("/api/create", Server::handleCreate);
+        server.createContext("/api/join", Server::handleJoin);
         server.createContext("/", Server::handleStatic);
         server.start();
 
@@ -22,15 +25,36 @@ public class Server {
     }
 
 
-    protected static void handleCreate(HttpExchange ex) throws IOException {
-        Room room = new Room("1111");
-        respond(ex, null);
+    private static void handleCreate(HttpExchange ex) throws IOException {
+        String code = String.valueOf((int)(Math.random() * 9000) + 1000);
+        Room room = new Room(code);
+        rooms.put(room.code, room);
+        respond(ex, "{\"code\":\"" + room.code + "\"}");
+    }
+
+    private static void handleJoin(HttpExchange ex) throws IOException {
+        String query = ex.getRequestURI().getQuery();
+        Map<String, String> params = parseQuery(query);
+        String code = params.get("code");
+
+        if (code == null || !rooms.containsKey(code)) {
+            respond(ex, "{\"error\":\"Room not found\"}");
+            return;
+        }
+
+        Room room = rooms.get(code);
+        int playerId = room.join();
+        if (playerId == -1) {
+            respond(ex, "{\"error\":\"Room is full\"}");
+            return;
+        }
+        respond(ex, "{\"message\":\"Joined room " + code + "\", \"playerId\": " + playerId + "}");
     }
 
 
 
 
-    protected static void handleStatic(HttpExchange ex) throws IOException {
+    private static void handleStatic(HttpExchange ex) throws IOException {
         String path = ex.getRequestURI().getPath();
         if (path.equals("/")) {
             path = "/index.html";
@@ -61,7 +85,23 @@ public class Server {
         }
     }
 
-    static void respond(HttpExchange ex, String json) throws IOException {
+    
+    private static Map<String, String> parseQuery(String query) {
+        Map<String, String> params = new HashMap<>();
+
+        if (query == null) return params;
+
+        for (String pair : query.split("&")) {
+            String[] kv = pair.split("=", 2);
+            if (kv.length == 2) {
+                params.put(kv[0], kv[1]);
+            }
+        }
+
+        return params;
+    }
+
+    private static void respond(HttpExchange ex, String json) throws IOException {
         byte[] data = json.getBytes(StandardCharsets.UTF_8);
         ex.getResponseHeaders().add("Content-Type", "application/json; charset=utf-8");
         ex.sendResponseHeaders(200, data.length);
