@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -8,15 +9,28 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 
 public class Server {
+
+
+    
     public static void main(String[] args) throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+        server.createContext("/api/create", Server::handleCreate);
         server.createContext("/", Server::handleStatic);
         server.start();
 
         System.out.println("Server started: http://localhost:8080/");
     }
 
-    public static void handleStatic(HttpExchange ex) throws IOException {
+
+    protected static void handleCreate(HttpExchange ex) throws IOException {
+        Room room = new Room("1111");
+        respond(ex, null);
+    }
+
+
+
+
+    protected static void handleStatic(HttpExchange ex) throws IOException {
         String path = ex.getRequestURI().getPath();
         if (path.equals("/")) {
             path = "/index.html";
@@ -45,5 +59,12 @@ public class Server {
                 os.write(msg.getBytes());
             }
         }
+    }
+
+    static void respond(HttpExchange ex, String json) throws IOException {
+        byte[] data = json.getBytes(StandardCharsets.UTF_8);
+        ex.getResponseHeaders().add("Content-Type", "application/json; charset=utf-8");
+        ex.sendResponseHeaders(200, data.length);
+        try (OutputStream os = ex.getResponseBody()) { os.write(data); }
     }
 }
