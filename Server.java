@@ -4,6 +4,7 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -18,6 +19,7 @@ public class Server {
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
         server.createContext("/api/create", Server::handleCreate);
         server.createContext("/api/join", Server::handleJoin);
+        server.createContext("/api/triviapool", Server::handleTriviaPool);
         server.createContext("/", Server::handleStatic);
         server.start();
 
@@ -49,6 +51,12 @@ public class Server {
             return;
         }
         respond(ex, "{\"message\":\"Joined room " + code + "\", \"playerId\": " + playerId + "}");
+    }
+
+    private static void handleTriviaPool(HttpExchange ex) throws IOException {
+        Path path = Paths.get("./TriviaPool.json");
+        String json = Files.readString(path, StandardCharsets.UTF_8);
+        respond(ex, json);
     }
 
 
