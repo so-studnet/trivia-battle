@@ -68,7 +68,7 @@ public class Server {
             path = "/index.html";
         }
 
-        Path file = Path.of("." + path);
+        Path file = Path.of("./frontend" + path);
 
         if (Files.exists(file)) {
             byte[] data = Files.readAllBytes(file);
