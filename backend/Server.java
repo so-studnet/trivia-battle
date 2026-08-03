@@ -17,15 +17,25 @@ public class Server {
     
     public static void main(String[] args) throws Exception {
         HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
+        server.createContext("/api/triviapool", Server::handleTriviaPool);
         server.createContext("/api/create", Server::handleCreate);
         server.createContext("/api/join", Server::handleJoin);
-        server.createContext("/api/triviapool", Server::handleTriviaPool);
+        server.createContext("/api/selectcard", Server::handleSelectCard);
+        server.createContext("/api/getcardselection", Server::handleGetCardSelection);
+        server.createContext("/api/answercard", Server::handleAnswerCard);
+        server.createContext("/api/getcardanswer", Server::handleGetCardAnswer);
+        server.createContext("/api/next", Server::handleNext);
         server.createContext("/", Server::handleStatic);
         server.start();
 
         System.out.println("Server started: http://localhost:8080/");
     }
 
+    private static void handleTriviaPool(HttpExchange ex) throws IOException {
+        Path path = Paths.get("./TriviaPool.json");
+        String json = Files.readString(path, StandardCharsets.UTF_8);
+        respond(ex, json);
+    }
 
     private static void handleCreate(HttpExchange ex) throws IOException {
         String code = String.valueOf((int)(Math.random() * 9000) + 1000);
@@ -45,21 +55,119 @@ public class Server {
         }
 
         Room room = rooms.get(code);
-        int playerId = room.join();
-        if (playerId == -1) {
+        String playerId = room.join();
+        if (playerId == null) {
             respond(ex, "{\"error\":\"Room is full\"}");
             return;
         }
-        respond(ex, "{\"message\":\"Joined room " + code + "\", \"playerId\": " + playerId + "}");
-    }
-
-    private static void handleTriviaPool(HttpExchange ex) throws IOException {
-        Path path = Paths.get("./TriviaPool.json");
-        String json = Files.readString(path, StandardCharsets.UTF_8);
-        respond(ex, json);
+        respond(ex, "{\"message\":\"Joined room " + code + "\", \"playerId\": \"" + playerId + "\"}");
     }
 
 
+    private static void handleSelectCard(HttpExchange ex) throws IOException {
+        String query = ex.getRequestURI().getQuery();
+        Map<String, String> params = parseQuery(query);
+        String code = params.get("code");
+        String playerId = params.get("playerId");
+        String cardId = params.get("cardId");
+
+        if (code == null || !rooms.containsKey(code)) {
+            respond(ex, "{\"error\":\"Room not found\"}");
+            return;
+        }
+
+        if (playerId == null || cardId == null) {
+            respond(ex, "{\"error\":\"Missing playerId or cardId\"}");
+            return;
+        }
+
+        rooms.get(code).game.setCardSelection(playerId, cardId);
+
+        respond(ex, "{\"message\":\"Card selected\"}");
+    }
+
+    private static void handleGetCardSelection(HttpExchange ex) throws IOException {
+        String query = ex.getRequestURI().getQuery();
+        Map<String, String> params = parseQuery(query);
+        String code = params.get("code");
+        String playerId = params.get("playerId");
+
+        if (code == null || !rooms.containsKey(code)) {
+            respond(ex, "{\"error\":\"Room not found\"}");
+            return;
+        }
+
+        if (playerId == null) {
+            respond(ex, "{\"error\":\"Missing playerId\"}");
+            return;
+        }
+
+        String opponentId = rooms.get(code).game.opponentId(playerId);
+        String cardId = rooms.get(code).game.getCardSelection(opponentId);
+
+        respond(ex, "{\"cardId\":\"" + cardId + "\"}");
+    }
+
+    private static void handleAnswerCard(HttpExchange ex) throws IOException {
+        String query = ex.getRequestURI().getQuery();
+        Map<String, String> params = parseQuery(query);
+        String code = params.get("code");
+        String playerId = params.get("playerId");
+        String isCorrectStr = params.get("isCorrect");
+
+        if (code == null || !rooms.containsKey(code)) {
+            respond(ex, "{\"error\":\"Room not found\"}");
+            return;
+        }
+
+        if (playerId == null || isCorrectStr == null) {
+            respond(ex, "{\"error\":\"Missing playerId or isCorrect\"}");
+            return;
+        }
+
+        boolean isCorrect = Boolean.parseBoolean(isCorrectStr);
+        rooms.get(code).game.setCardAnswer(playerId, isCorrect);
+
+        respond(ex, "{\"message\":\"Card answer recorded\"}");
+    }
+
+
+    private static void handleGetCardAnswer(HttpExchange ex) throws IOException {
+        String query = ex.getRequestURI().getQuery();
+        Map<String, String> params = parseQuery(query);
+        String code = params.get("code");
+        String playerId = params.get("playerId");
+
+        if (code == null || !rooms.containsKey(code)) {
+            respond(ex, "{\"error\":\"Room not found\"}");
+            return;
+        }
+
+        if (playerId == null) {
+            respond(ex, "{\"error\":\"Missing playerId\"}");
+            return;
+        }
+
+        String opponentId = rooms.get(code).game.opponentId(playerId);
+        Boolean isCorrect = rooms.get(code).game.getCardAnswer(opponentId);
+
+        respond(ex, "{\"isCorrect\":" + isCorrect + "}");
+    }
+
+    private static void handleNext(HttpExchange ex) throws IOException {
+        String query = ex.getRequestURI().getQuery();
+        Map<String, String> params = parseQuery(query);
+        String code = params.get("code");
+
+        if (code == null || !rooms.containsKey(code)) {
+            respond(ex, "{\"error\":\"Room not found\"}");
+            return;
+        }
+
+        rooms.get(code).game.resetRound();
+
+        respond(ex, "{\"message\":\"Ready for next round\"}");
+    }
 
 
     private static void handleStatic(HttpExchange ex) throws IOException {
