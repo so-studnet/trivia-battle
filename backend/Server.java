@@ -35,7 +35,7 @@ public class Server {
     }
 
     private static void handleTriviaPool(HttpExchange ex) throws IOException {
-        Path path = Paths.get("./TriviaPool.json");
+        Path path = Paths.get("backend/TriviaPool.json");
         String json = Files.readString(path, StandardCharsets.UTF_8);
         respond(ex, json);
     }

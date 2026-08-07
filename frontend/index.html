@@ -113,6 +113,11 @@
         <p id="result-explanation" class="explanation"></p>
         <button id="btn-next-turn" class="btn" type="button">次のターンへ</button>
       </section>
+
+      <section id="phase-wait" class="phase hidden">
+        <span class="spinner wait-spinner"></span>
+        <p id="wait-message" class="phase-message"></p>
+      </section>
     </main>
 
     <section id="result-screen" class="hidden">
@@ -131,14 +136,6 @@
     <div class="modal-buttons">
       <button id="btn-decide" class="btn btn-decide" type="button">この雑学に決定する</button>
       <button id="btn-cancel" class="btn btn-cancel" type="button">戻る</button>
-    </div>
-  </div>
-
-  <div id="pass-overlay" class="modal hidden">
-    <div class="modal-backdrop"></div>
-    <div class="pass-message">
-      <p id="pass-text"></p>
-      <button id="btn-pass-ready" class="btn" type="button">準備完了</button>
     </div>
   </div>
 

@@ -5,6 +5,10 @@ function createApiUrl(path, params = {}) {
   return `${path}?${searchParams.toString()}`;
 }
 
+export async function fetchTriviaPool() {
+    const response = await fetch("/api/triviapool");
+    return await response.json();
+}
 
 // ルーム作成
 export async function createRoomApi() {

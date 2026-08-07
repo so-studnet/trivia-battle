@@ -236,5 +236,9 @@ function setReadyBadge(elId, joined, ready) {
 
 function startGame() {
   showScreen("screen-game");
-  initGame();
+  initGame({
+    code: roomState.code,
+    selfId: roomState.selfId,
+    role: roomState.role,
+  });
 }

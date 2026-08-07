@@ -203,8 +203,7 @@ body {
   background: rgba(0, 0, 0, 0.55);
 }
 
-.card-expanded,
-.pass-message {
+.card-expanded {
   position: relative;
   z-index: 1;
 }
@@ -217,12 +216,19 @@ body {
   margin-top: 20px;
 }
 
-.pass-message {
-  background: #fff;
-  border-radius: 10px;
-  padding: 32px 40px;
-  text-align: center;
-  max-width: 360px;
+#phase-wait {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 60px 0;
+}
+
+.wait-spinner {
+  width: 24px;
+  height: 24px;
+  border-width: 3px;
 }
 
 #result-screen {

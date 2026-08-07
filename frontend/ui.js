@@ -1,23 +1,20 @@
-import { GameEngine, NetworkClient } from "./gameEngine.js";
+import { GameEngine } from "./gameEngine.js";
 
-// ゲーム画面(既存)の制御ロジック。
-// ルーム画面(room.js)側で対戦準備が整ったタイミングで initGame() を呼び出して開始する。
-// ネットワーク対戦を実装する際は NetworkClient を実際の通信クライアントに差し替える想定。
+// ゲーム画面の制御ロジック(ネットワーク対戦版)。
+// ルーム画面(room.js)側で対戦準備が整ったタイミングで initGame(roomInfo) を呼び出して開始する。
+// 自分の手番でない間は phase-wait を表示し、相手の操作をAPIポーリングで待つ。
 
 let engine = null;
-let net = null;
-let activeViewer = "A";
 let initialized = false;
 
-export function initGame() {
+export function initGame(roomInfo) {
   if (initialized) return;
   initialized = true;
 
-  engine = new GameEngine(3);
-  net = new NetworkClient(engine);
+  engine = new GameEngine(3, roomInfo);
 
-  net.on("update", (state) => render(state));
-  render(net.getState());
+  engine.on("update", (state) => render(state));
+  render(engine.getState());
 }
 
 function render(state) {
@@ -30,38 +27,7 @@ function render(state) {
   document.getElementById("game-screen").classList.remove("hidden");
 
   updateScoreBoard(state);
-
-  const requiredViewer = requiredViewerFor(state.phase, state);
-  if (requiredViewer && requiredViewer !== activeViewer) {
-    showPassOverlay(requiredViewer, () => {
-      activeViewer = requiredViewer;
-      renderPhase(state);
-    });
-    return;
-  }
   renderPhase(state);
-}
-
-function requiredViewerFor(phase, state) {
-  if (phase === "SELECT") return state.questioner;
-  if (phase === "GUESS") return state.guesser;
-  return null;
-}
-
-function showPassOverlay(nextViewer, onReady) {
-  const overlay = document.getElementById("pass-overlay");
-  document.getElementById(
-    "pass-text"
-  ).textContent = `端末を交代してください。次は ${nextViewer}さんの番です。準備ができたらボタンを押してください。`;
-  overlay.classList.remove("hidden");
-
-  const btn = document.getElementById("btn-pass-ready");
-  const handler = () => {
-    overlay.classList.add("hidden");
-    btn.removeEventListener("click", handler);
-    onReady();
-  };
-  btn.addEventListener("click", handler);
 }
 
 function hideAllPhases() {
@@ -76,21 +42,34 @@ function renderPhase(state) {
 
   switch (state.phase) {
     case "SELECT":
-      turnIndicator.textContent = `${state.questioner}さんが出題者です`;
+      turnIndicator.textContent = "あなたが出題者です";
       document.getElementById("phase-select").classList.remove("hidden");
       renderCardRow(state.turnCards);
       break;
+    case "WAIT_SELECT":
+      turnIndicator.textContent = "相手が出題者です";
+      showWaitPhase("相手がカードを選んでいます…お待ちください");
+      break;
     case "GUESS":
-      turnIndicator.textContent = `${state.guesser}さんが回答者です`;
+      turnIndicator.textContent = "あなたが回答者です";
       document.getElementById("phase-guess").classList.remove("hidden");
       renderGuessCard(state.selectedCard);
+      break;
+    case "WAIT_GUESS":
+      turnIndicator.textContent = "相手が回答者です";
+      showWaitPhase("相手が回答しています…お待ちください");
       break;
     case "TURN_RESULT":
       turnIndicator.textContent = "この問題の結果";
       document.getElementById("phase-turn-result").classList.remove("hidden");
-      renderTurnResult(state.lastTurnResult);
+      renderTurnResult(state.lastTurnResult, state);
       break;
   }
+}
+
+function showWaitPhase(message) {
+  document.getElementById("wait-message").textContent = message;
+  document.getElementById("phase-wait").classList.remove("hidden");
 }
 
 function renderCardRow(cards) {
@@ -128,7 +107,7 @@ function openCardModal(card) {
   const decideHandler = () => {
     modal.classList.add("hidden");
     cleanup();
-    net.send("SELECT_CARD", { cardId: card.id });
+    engine.selectCard(card.id);
   };
   const cancelHandler = () => {
     modal.classList.add("hidden");
@@ -149,14 +128,12 @@ function renderGuessCard(card) {
 
 document
   .getElementById("btn-true")
-  .addEventListener("click", () => net.send("SUBMIT_GUESS", { guess: true }));
+  .addEventListener("click", () => engine.submitGuess(true));
 document
   .getElementById("btn-false")
-  .addEventListener("click", () =>
-    net.send("SUBMIT_GUESS", { guess: false })
-  );
+  .addEventListener("click", () => engine.submitGuess(false));
 
-function renderTurnResult(result) {
+function renderTurnResult(result, state) {
   document.getElementById("result-heading").textContent = result.correct
     ? "正解！"
     : "不正解…";
@@ -165,22 +142,27 @@ function renderTurnResult(result) {
   ).innerHTML = `<div class="card-inner"><p class="card-text">${escapeHtml(
     result.text
   )}</p></div>`;
+  const scorerIsMe = result.scorer === state.myLetter;
   document.getElementById("result-answer").textContent = `答え: ${
     result.isTrue ? "本当" : "ウソ"
   }（${result.guesser}さんの回答: ${
     result.guess ? "本当" : "ウソ"
-  } / ${result.scorer}さんに1点）`;
+  } / ${result.scorer}さん${scorerIsMe ? "（あなた）" : ""}に1点）`;
   document.getElementById("result-explanation").textContent =
     result.explanation;
 }
 
 document
   .getElementById("btn-next-turn")
-  .addEventListener("click", () => net.send("NEXT_TURN"));
+  .addEventListener("click", () => engine.proceedNextTurn());
 
 function updateScoreBoard(state) {
-  document.getElementById("score-a").textContent = `Aさん: ${state.scores.A}`;
-  document.getElementById("score-b").textContent = `Bさん: ${state.scores.B}`;
+  document.getElementById("score-a").textContent = `Aさん${
+    state.myLetter === "A" ? "（あなた）" : ""
+  }: ${state.scores.A}`;
+  document.getElementById("score-b").textContent = `Bさん${
+    state.myLetter === "B" ? "（あなた）" : ""
+  }: ${state.scores.B}`;
   document.getElementById("target-score").textContent = state.targetScore;
 }
 
@@ -189,9 +171,12 @@ function showResultScreen(state) {
   const resultScreen = document.getElementById("result-screen");
   resultScreen.classList.remove("hidden");
 
+  const youWon = state.winner === state.myLetter;
   document.getElementById(
     "winner-heading"
-  ).textContent = `${state.winner}さんの勝利！`;
+  ).textContent = `${state.winner}さんの勝利！${
+    youWon ? "（あなたの勝ち）" : "（あなたの負け）"
+  }`;
   document.getElementById(
     "final-score"
   ).textContent = `最終スコア　Aさん: ${state.scores.A} － Bさん: ${state.scores.B}`;
@@ -210,21 +195,14 @@ function showResultScreen(state) {
     `;
     historyList.appendChild(item);
   });
-
-  activeViewer = "A";
 }
 
 document.getElementById("btn-restart").addEventListener("click", () => {
-  net.send("RESTART");
+  engine.restart();
 });
 
 function escapeHtml(str) {
   const div = document.createElement("div");
   div.textContent = str;
   return div.innerHTML;
-}
-
-function createApiUrl(path, params = {}) {
-  const searchParams = new URLSearchParams(params);
-  return `${path}?${searchParams.toString()}`;
 }
