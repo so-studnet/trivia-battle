@@ -1,4 +1,5 @@
 import { initGame } from "./ui.js";
+import { createRoomApi, joinRoomApi, checkRoomJoinApi, readyRoomApi, startRoomApi } from "./api.js";
 
 // ルーム画面: タイトル選択 → 対戦ルーム待機 → ゲーム開始
 
@@ -6,13 +7,14 @@ const roomState = {
   role: null, // "host" | "guest"
   code: null,
   selfName: "",
+  selfId: "",
   selfReady: false,
   opponentName: null,
   opponentJoined: false,
   opponentReady: false,
 };
 
-let opponentTimer = null;
+let roomCheckTimer = null;
 
 function showScreen(id) {
   document.querySelectorAll(".screen").forEach((el) => {
@@ -53,62 +55,74 @@ function clearTitleError() {
 
 // ---------- ルーム作成 / 参加 ----------
 
-function generateRoomCode() {
-  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-  let code = "";
-  for (let i = 0; i < 6; i++) {
-    code += chars[Math.floor(Math.random() * chars.length)];
-  }
-  return code;
-}
-
-function createRoom(name) {
+async function createRoom(name) {
   clearTitleError();
-  clearOpponentTimer();
+
+  const data = await createRoomApi();
 
   roomState.role = "host";
-  roomState.code = generateRoomCode();
-  roomState.selfName = name;
-  roomState.selfReady = false;
-  roomState.opponentName = null;
-  roomState.opponentJoined = false;
-  roomState.opponentReady = false;
+  roomState.code = data.code;
 
-  showScreen("screen-room");
-  renderRoom();
+  joinRoom(name, roomState.code);
 
-  opponentTimer = setTimeout(() => {
-    simulateOpponentJoin();
-  }, 6000);
 }
 
-function joinRoom(name, code) {
+async function joinRoom(name, code) {
   clearTitleError();
-  clearOpponentTimer();
 
-  roomState.role = "guest";
+  const data = await joinRoomApi(code);
+
+  if(roomState.role !== "host") {
+    roomState.role = "guest";
+  }
   roomState.code = code;
   roomState.selfName = name;
+  roomState.selfId = data.playerId;
   roomState.selfReady = false;
-  roomState.opponentName = "ホストプレイヤー";
-  roomState.opponentJoined = true;
-  roomState.opponentReady = false;
 
   showScreen("screen-room");
   renderRoom();
+
+  startRoomCheck();
 }
 
-function clearOpponentTimer() {
-  if (opponentTimer) {
-    clearTimeout(opponentTimer);
-    opponentTimer = null;
+function startRoomCheck() {
+
+  roomCheckTimer = setInterval(async () => {
+
+    const data = await checkRoomJoinApi(roomState.code, roomState.selfId);
+
+    if (data.opponentJoined) {
+
+      roomState.opponentJoined = true;
+      roomState.opponentName = "領収書食べ放題";
+      roomState.opponentReady = data.opponentReady;
+      roomState.gameStarted = data.gameStarted;
+
+      renderRoom();
+
+      if (roomState.gameStarted) {
+        stopRoomCheck();
+        startGame();
+      }
+    }
+
+
+  }, 100);
+}
+
+function stopRoomCheck() {
+
+  if (roomCheckTimer) {
+    clearInterval(roomCheckTimer);
+    roomCheckTimer = null;
   }
+
 }
 
 // ---------- ルーム内アクション ----------
 
 document.getElementById("btn-leave-room").addEventListener("click", () => {
-  clearOpponentTimer();
   showScreen("screen-title");
 });
 
@@ -131,56 +145,16 @@ document.getElementById("btn-copy-code").addEventListener("click", () => {
 
 document.getElementById("btn-toggle-ready").addEventListener("click", () => {
   roomState.selfReady = !roomState.selfReady;
+  readyRoomApi(roomState.code, roomState.selfId, roomState.selfReady);
   renderRoom();
 });
 
 document.getElementById("btn-start-game").addEventListener("click", () => {
   if (roomState.role !== "host") return;
   if (!(roomState.selfReady && roomState.opponentReady)) return;
-  startGame();
+  startRoomApi(roomState.code);
 });
 
-document
-  .getElementById("btn-demo-opponent")
-  .addEventListener("click", () => {
-    clearOpponentTimer();
-    if (roomState.role === "host") {
-      if (!roomState.opponentJoined) {
-        simulateOpponentJoin();
-      } else if (!roomState.opponentReady) {
-        simulateOpponentReadyAndStart();
-      }
-    } else {
-      simulateOpponentReadyAndStart();
-    }
-  });
-
-// ---------- 相手プレイヤーのダミー動作 ----------
-
-function simulateOpponentJoin() {
-  if (roomState.opponentJoined) return;
-  const demoNames = ["ゲストプレイヤー", "たろう", "はなこ", "ゲスト参加者"];
-  roomState.opponentName =
-    demoNames[Math.floor(Math.random() * demoNames.length)];
-  roomState.opponentJoined = true;
-  roomState.opponentReady = false;
-  renderRoom();
-}
-
-function simulateOpponentReadyAndStart() {
-  if (roomState.role === "host") {
-    if (!roomState.opponentJoined) return;
-    roomState.opponentReady = true;
-    renderRoom();
-    return;
-  }
-
-  roomState.opponentReady = true;
-  renderRoom();
-  setTimeout(() => {
-    startGame();
-  }, 900);
-}
 
 // ---------- 描画 ----------
 
@@ -243,19 +217,6 @@ function renderRoom() {
     !(roomState.role === "host" && bothReady)
   );
 
-  const demoBtn = document.getElementById("btn-demo-opponent");
-  if (roomState.role === "host") {
-    demoBtn.classList.toggle(
-      "hidden",
-      roomState.opponentJoined && roomState.opponentReady
-    );
-    demoBtn.textContent = !roomState.opponentJoined
-      ? "［動作確認用］相手を参加させる"
-      : "［動作確認用］相手を準備完了にする";
-  } else {
-    demoBtn.classList.toggle("hidden", roomState.opponentReady);
-    demoBtn.textContent = "［動作確認用］ホストを準備完了・開始させる";
-  }
 }
 
 function setReadyBadge(elId, joined, ready) {
@@ -274,7 +235,6 @@ function setReadyBadge(elId, joined, ready) {
 }
 
 function startGame() {
-  clearOpponentTimer();
   showScreen("screen-game");
   initGame();
 }

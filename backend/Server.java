@@ -20,6 +20,9 @@ public class Server {
         server.createContext("/api/triviapool", Server::handleTriviaPool);
         server.createContext("/api/create", Server::handleCreate);
         server.createContext("/api/join", Server::handleJoin);
+        server.createContext("/api/ready", Server::handleReady);
+        server.createContext("/api/start", Server::handleStart);
+        server.createContext("/api/checkopponent", Server::handleGetOpponent);
         server.createContext("/api/selectcard", Server::handleSelectCard);
         server.createContext("/api/getcardselection", Server::handleGetCardSelection);
         server.createContext("/api/answercard", Server::handleAnswerCard);
@@ -63,6 +66,76 @@ public class Server {
         respond(ex, "{\"message\":\"Joined room " + code + "\", \"playerId\": \"" + playerId + "\"}");
     }
 
+    private static void handleReady(HttpExchange ex) throws IOException {
+        String query = ex.getRequestURI().getQuery();
+        Map<String, String> params = parseQuery(query);
+        String code = params.get("code");
+        String playerId = params.get("playerId");
+        String isReadyStr = params.get("isReady");
+
+        if (code == null || !rooms.containsKey(code)) {
+            respond(ex, "{\"error\":\"Room not found\"}");
+            return;
+        }
+
+        if (playerId == null || isReadyStr == null) {
+            respond(ex, "{\"error\":\"Missing playerId or isReady\"}");
+            return;
+        }
+
+        boolean isReady = Boolean.parseBoolean(isReadyStr);
+        rooms.get(code).setReady(playerId, isReady);
+
+        respond(ex, "{\"message\":\"Player " + playerId + " ready status set to " + isReady + "\"}");
+    }
+
+    private static void handleStart(HttpExchange ex) throws IOException {
+        String query = ex.getRequestURI().getQuery();
+        Map<String, String> params = parseQuery(query);
+        String code = params.get("code");
+
+        if (code == null || !rooms.containsKey(code)) {
+            respond(ex, "{\"error\":\"Room not found\"}");
+            return;
+        }
+
+        Room room = rooms.get(code);
+        if (room.playerCount < 2) {
+            respond(ex, "{\"error\":\"Not enough players to start the game\"}");
+            return;
+        }
+
+        room.game.isGameStarted = true;
+        respond(ex, "{\"message\":\"Game started in room " + code + "\"}");
+    }
+
+    private static void handleGetOpponent(HttpExchange ex) throws IOException {
+        String query = ex.getRequestURI().getQuery();
+        Map<String, String> params = parseQuery(query);
+        String code = params.get("code");
+        String playerId = params.get("playerId");
+
+        if (code == null || !rooms.containsKey(code)) {
+            respond(ex, "{\"error\":\"Room not found\"}");
+            return;
+        }
+
+        Room room = rooms.get(code);
+        String opponentId = room.game.opponentId(playerId);
+
+        if (opponentId == null) {
+            respond(ex, "{\"opponentJoined\":false}");
+            return;
+        }
+
+        int playerCount = room.playerCount;
+        boolean opponentReady = room.isReady(opponentId);
+        boolean gameStarted = room.game.isGameStarted;
+
+        if (playerCount >= 2) {
+            respond(ex, "{\"opponentJoined\":true, \"opponentReady\":" + opponentReady + ", \"gameStarted\":" + gameStarted + "}");
+        }
+    }
 
     private static void handleSelectCard(HttpExchange ex) throws IOException {
         String query = ex.getRequestURI().getQuery();

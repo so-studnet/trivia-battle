@@ -2,6 +2,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class Game {
+    boolean isGameStarted = false;
     String player1Id;
     String player2Id;
     private Map<String, String> cardSelection = new HashMap<>();

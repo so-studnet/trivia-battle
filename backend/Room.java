@@ -1,6 +1,8 @@
 public class Room {
     final String code;
     int playerCount = 0;
+    boolean readyPlayer1 = false;
+    boolean readyPlayer2 = false;
     Game game = new Game();
 
     protected Room(String code){
@@ -27,5 +29,23 @@ public class Room {
             randomId = String.valueOf((int)(Math.random() * 9000) + 1000);
         } while (randomId.equals(game.player1Id) || randomId.equals(game.player2Id));
         return randomId;
+    }
+
+    protected synchronized void setReady(String playerId, boolean isReady) {
+        if (playerId.equals(game.player1Id)) {
+            readyPlayer1 = isReady;
+        } else if (playerId.equals(game.player2Id)) {
+            readyPlayer2 = isReady;
+        }
+    }
+
+    protected synchronized boolean isReady(String playerId) {
+        if (playerId.equals(game.player1Id)) {
+            return readyPlayer1;
+        } else if (playerId.equals(game.player2Id)) {
+            return readyPlayer2;
+        } else {
+            return false;
+        }
     }
 }

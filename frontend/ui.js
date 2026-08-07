@@ -223,3 +223,8 @@ function escapeHtml(str) {
   div.textContent = str;
   return div.innerHTML;
 }
+
+function createApiUrl(path, params = {}) {
+  const searchParams = new URLSearchParams(params);
+  return `${path}?${searchParams.toString()}`;
+}
