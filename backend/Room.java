@@ -9,14 +9,16 @@ public class Room {
         this.code = code;
     }
 
-    protected synchronized String join(){
+    protected synchronized String join(String name){
         if(playerCount == 0){
             playerCount++;
             game.player1Id = makeRandomId();
+            game.player1Name = name;
             return game.player1Id;
         }else if(playerCount == 1){
             playerCount++;
             game.player2Id = makeRandomId();
+            game.player2Name = name;
             return game.player2Id;
         }else{
             return null;
@@ -29,6 +31,18 @@ public class Room {
             randomId = String.valueOf((int)(Math.random() * 9000) + 1000);
         } while (randomId.equals(game.player1Id) || randomId.equals(game.player2Id));
         return randomId;
+    }
+
+    protected synchronized String getPlayerName(String playerId) {
+        if (playerId.equals(game.player1Id)) {
+            System.out.println("Player 1 Name: " + game.player1Name);
+            return game.player1Name;
+        } else if (playerId.equals(game.player2Id)) {
+            System.out.println("Player 2 Name: " + game.player2Name);
+            return game.player2Name;
+        } else {
+            return null;
+        }
     }
 
     protected synchronized void setReady(String playerId, boolean isReady) {

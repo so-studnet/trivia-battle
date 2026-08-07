@@ -18,9 +18,10 @@ export async function createRoomApi() {
 
 
 // ルーム参加
-export async function joinRoomApi(code) {
+export async function joinRoomApi(code, name) {
   const url = createApiUrl("/api/join", {
-    code: code
+    code: code,
+    name: name
   });
 
   const response = await fetch(url);

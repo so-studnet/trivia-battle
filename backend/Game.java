@@ -5,6 +5,8 @@ public class Game {
     boolean isGameStarted = false;
     String player1Id;
     String player2Id;
+    String player1Name;
+    String player2Name;
     private Map<String, String> cardSelection = new HashMap<>();
     private Map<String, Boolean> cardAnswer = new HashMap<>();
 

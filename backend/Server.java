@@ -51,6 +51,7 @@ public class Server {
         String query = ex.getRequestURI().getQuery();
         Map<String, String> params = parseQuery(query);
         String code = params.get("code");
+        String name = params.get("name");
 
         if (code == null || !rooms.containsKey(code)) {
             respond(ex, "{\"error\":\"Room not found\"}");
@@ -58,7 +59,7 @@ public class Server {
         }
 
         Room room = rooms.get(code);
-        String playerId = room.join();
+        String playerId = room.join(name);
         if (playerId == null) {
             respond(ex, "{\"error\":\"Room is full\"}");
             return;
@@ -129,11 +130,12 @@ public class Server {
         }
 
         int playerCount = room.playerCount;
+        String opponentName = room.getPlayerName(opponentId);
         boolean opponentReady = room.isReady(opponentId);
         boolean gameStarted = room.game.isGameStarted;
 
         if (playerCount >= 2) {
-            respond(ex, "{\"opponentJoined\":true, \"opponentReady\":" + opponentReady + ", \"gameStarted\":" + gameStarted + "}");
+            respond(ex, "{\"opponentJoined\":true, \"opponentName\":\"" + opponentName + "\", \"opponentReady\":" + opponentReady + ", \"gameStarted\":" + gameStarted + "}");
         }
     }
 

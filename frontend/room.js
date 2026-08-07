@@ -70,7 +70,7 @@ async function createRoom(name) {
 async function joinRoom(name, code) {
   clearTitleError();
 
-  const data = await joinRoomApi(code);
+  const data = await joinRoomApi(code, name);
 
   if(roomState.role !== "host") {
     roomState.role = "guest";
@@ -95,7 +95,7 @@ function startRoomCheck() {
     if (data.opponentJoined) {
 
       roomState.opponentJoined = true;
-      roomState.opponentName = "領収書食べ放題";
+      roomState.opponentName = data.opponentName;
       roomState.opponentReady = data.opponentReady;
       roomState.gameStarted = data.gameStarted;
 
