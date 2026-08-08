@@ -30,6 +30,10 @@ function render(state) {
   renderPhase(state);
 }
 
+function nameOf(letter, state) {
+  return (state.names && state.names[letter]) || letter;
+}
+
 function hideAllPhases() {
   document
     .querySelectorAll(".phase")
@@ -40,6 +44,9 @@ function renderPhase(state) {
   hideAllPhases();
   const turnIndicator = document.getElementById("turn-indicator");
 
+  const opponentLetter = state.myLetter === "A" ? "B" : "A";
+  const opponentName = nameOf(opponentLetter, state);
+
   switch (state.phase) {
     case "SELECT":
       turnIndicator.textContent = "あなたが出題者です";
@@ -47,8 +54,8 @@ function renderPhase(state) {
       renderCardRow(state.turnCards);
       break;
     case "WAIT_SELECT":
-      turnIndicator.textContent = "相手が出題者です";
-      showWaitPhase("相手がカードを選んでいます…お待ちください");
+      turnIndicator.textContent = `${opponentName}さんが出題者です`;
+      showWaitPhase(`${opponentName}さんがカードを選んでいます…お待ちください`);
       break;
     case "GUESS":
       turnIndicator.textContent = "あなたが回答者です";
@@ -56,8 +63,8 @@ function renderPhase(state) {
       renderGuessCard(state.selectedCard);
       break;
     case "WAIT_GUESS":
-      turnIndicator.textContent = "相手が回答者です";
-      showWaitPhase("相手が回答しています…お待ちください");
+      turnIndicator.textContent = `${opponentName}さんが回答者です`;
+      showWaitPhase(`${opponentName}さんが回答しています…お待ちください`);
       break;
     case "TURN_RESULT":
       turnIndicator.textContent = "この問題の結果";
@@ -145,9 +152,11 @@ function renderTurnResult(result, state) {
   const scorerIsMe = result.scorer === state.myLetter;
   document.getElementById("result-answer").textContent = `答え: ${
     result.isTrue ? "本当" : "ウソ"
-  }（${result.guesser}さんの回答: ${
+  }（${nameOf(result.guesser, state)}さんの回答: ${
     result.guess ? "本当" : "ウソ"
-  } / ${result.scorer}さん${scorerIsMe ? "（あなた）" : ""}に1点）`;
+  } / ${nameOf(result.scorer, state)}さん${
+    scorerIsMe ? "（あなた）" : ""
+  }に1点）`;
   document.getElementById("result-explanation").textContent =
     result.explanation;
 }
@@ -157,10 +166,10 @@ document
   .addEventListener("click", () => engine.proceedNextTurn());
 
 function updateScoreBoard(state) {
-  document.getElementById("score-a").textContent = `Aさん${
+  document.getElementById("score-a").textContent = `${nameOf("A", state)}さん${
     state.myLetter === "A" ? "（あなた）" : ""
   }: ${state.scores.A}`;
-  document.getElementById("score-b").textContent = `Bさん${
+  document.getElementById("score-b").textContent = `${nameOf("B", state)}さん${
     state.myLetter === "B" ? "（あなた）" : ""
   }: ${state.scores.B}`;
   document.getElementById("target-score").textContent = state.targetScore;
@@ -174,12 +183,14 @@ function showResultScreen(state) {
   const youWon = state.winner === state.myLetter;
   document.getElementById(
     "winner-heading"
-  ).textContent = `${state.winner}さんの勝利！${
+  ).textContent = `${nameOf(state.winner, state)}さんの勝利！${
     youWon ? "（あなたの勝ち）" : "（あなたの負け）"
   }`;
   document.getElementById(
     "final-score"
-  ).textContent = `最終スコア　Aさん: ${state.scores.A} － Bさん: ${state.scores.B}`;
+  ).textContent = `最終スコア　${nameOf("A", state)}さん: ${
+    state.scores.A
+  } － ${nameOf("B", state)}さん: ${state.scores.B}`;
 
   const historyList = document.getElementById("history-list");
   historyList.innerHTML = "";
@@ -190,7 +201,9 @@ function showResultScreen(state) {
       <p class="history-turn">第${i + 1}問: ${escapeHtml(h.text)}</p>
       <p class="history-answer">答え: ${
         h.isTrue ? "本当" : "ウソ"
-      } ／ 結果: ${h.correct ? "正解" : "不正解"}（${h.scorer}さんに1点）</p>
+      } ／ 結果: ${h.correct ? "正解" : "不正解"}（${escapeHtml(
+      nameOf(h.scorer, state)
+    )}さんに1点）</p>
       <p class="history-explanation">${escapeHtml(h.explanation)}</p>
     `;
     historyList.appendChild(item);

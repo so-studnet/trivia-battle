@@ -20,7 +20,13 @@ export class GameEngine {
     this.targetScore = targetScore;
     this.code = roomInfo.code;
     this.selfId = roomInfo.selfId;
+    this.selfName = roomInfo.selfName;
+    this.opponentName = roomInfo.opponentName;
     this.myLetter = roomInfo.role === "host" ? "A" : "B";
+    this.names =
+      this.myLetter === "A"
+        ? { A: this.selfName, B: this.opponentName }
+        : { A: this.opponentName, B: this.selfName };
     this._listeners = [];
     this._pollTimer = null;
     this._resetState();
@@ -53,6 +59,7 @@ export class GameEngine {
       questioner: "A",
       guesser: "B",
       myLetter: this.myLetter,
+      names: this.names,
       turnCards: [],
       selectedCard: null,
       lastTurnResult: null,

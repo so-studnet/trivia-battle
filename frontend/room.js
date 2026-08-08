@@ -240,5 +240,7 @@ function startGame() {
     code: roomState.code,
     selfId: roomState.selfId,
     role: roomState.role,
+    selfName: roomState.selfName,
+    opponentName: roomState.opponentName,
   });
 }
