@@ -119,3 +119,10 @@ export async function nextRoundApi(code) {
   const response = await fetch(url);
   return await response.json();
 }
+
+
+// 管理者: 稼働中の全ルーム一覧
+export async function fetchAdminRooms() {
+  const response = await fetch("/api/admin/rooms");
+  return await response.json();
+}

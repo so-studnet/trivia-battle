@@ -28,6 +28,7 @@ public class Server {
         server.createContext("/api/answercard", Server::handleAnswerCard);
         server.createContext("/api/getcardanswer", Server::handleGetCardAnswer);
         server.createContext("/api/next", Server::handleNext);
+        server.createContext("/api/admin/rooms", Server::handleAdminRooms);
         server.createContext("/", Server::handleStatic);
         server.start();
 
@@ -245,10 +246,56 @@ public class Server {
     }
 
 
+    private static void handleAdminRooms(HttpExchange ex) throws IOException {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        boolean firstRoom = true;
+        for (Room room : rooms.values()) {
+            if (!firstRoom) sb.append(",");
+            firstRoom = false;
+
+            Game g = room.game;
+            sb.append("{");
+            sb.append("\"code\":\"").append(jsonEscape(room.code)).append("\",");
+            sb.append("\"playerCount\":").append(room.playerCount).append(",");
+            sb.append("\"isGameStarted\":").append(g.isGameStarted).append(",");
+            sb.append("\"players\":[");
+            boolean firstPlayer = true;
+            if (g.player1Id != null) {
+                sb.append(playerJson("host", g.player1Id, g.player1Name, room.readyPlayer1, g));
+                firstPlayer = false;
+            }
+            if (g.player2Id != null) {
+                if (!firstPlayer) sb.append(",");
+                sb.append(playerJson("guest", g.player2Id, g.player2Name, room.readyPlayer2, g));
+            }
+            sb.append("]");
+            sb.append("}");
+        }
+        sb.append("]");
+        respond(ex, sb.toString());
+    }
+
+    private static String playerJson(String role, String id, String name, boolean ready, Game g) {
+        return "{\"role\":\"" + role + "\","
+            + "\"id\":\"" + jsonEscape(id) + "\","
+            + "\"name\":\"" + jsonEscape(name) + "\","
+            + "\"ready\":" + ready + ","
+            + "\"selected\":" + g.hasSelected(id) + ","
+            + "\"answered\":" + g.hasAnswered(id) + "}";
+    }
+
+    private static String jsonEscape(String s) {
+        if (s == null) return "";
+        return s.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
     private static void handleStatic(HttpExchange ex) throws IOException {
         String path = ex.getRequestURI().getPath();
         if (path.equals("/")) {
             path = "/index.html";
+        } else if (path.equals("/admin")) {
+            path = "/admin.html";
         }
 
         Path file = Path.of("./frontend" + path);

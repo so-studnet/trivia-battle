@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理者画面 - 雑学カードバトル</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <div class="panel admin-panel">
+    <h1 class="app-title">管理者ダッシュボード</h1>
+    <p class="app-subtitle">現在稼働中のルーム・プレイヤーの一覧です</p>
+
+    <div class="admin-toolbar">
+      <span id="admin-room-count" class="admin-room-count">ルーム数: -</span>
+      <button id="btn-refresh" class="btn btn-small btn-outline" type="button">今すぐ更新</button>
+    </div>
+
+    <div id="admin-rooms" class="admin-rooms"></div>
+  </div>
+</div>
+
+<script type="module" src="admin.js"></script>
+</body>
+</html>

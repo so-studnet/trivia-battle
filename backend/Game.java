@@ -26,6 +26,14 @@ public class Game {
         return cardAnswer.get(playerId);
     }
 
+    protected synchronized boolean hasSelected(String playerId) {
+        return cardSelection.containsKey(playerId);
+    }
+
+    protected synchronized boolean hasAnswered(String playerId) {
+        return cardAnswer.containsKey(playerId);
+    }
+
     protected synchronized String opponentId(String playerId) {
         if (playerId.equals(player1Id)) {
             return player2Id;

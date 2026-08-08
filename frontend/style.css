@@ -596,6 +596,70 @@ body {
   color: #aaa;
 }
 
+/* ---- 管理者画面 ---- */
+
+.admin-panel {
+  max-width: 900px;
+  margin: 40px auto;
+  text-align: left;
+}
+
+.admin-toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 24px 0 20px;
+}
+
+.admin-room-count {
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.admin-rooms {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.admin-room-card {
+  border: 1px solid #e2e2e2;
+  border-radius: 8px;
+  padding: 16px 18px;
+}
+
+.admin-room-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.admin-room-code {
+  font-family: "Courier New", monospace;
+  font-weight: bold;
+  font-size: 1.05rem;
+  letter-spacing: 0.05em;
+}
+
+.admin-players {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.admin-player-id {
+  font-weight: normal;
+  color: #999;
+  font-size: 0.78rem;
+}
+
+.admin-empty {
+  color: #999;
+  text-align: center;
+  padding: 30px 0;
+}
+
 @media (max-width: 480px) {
   .card-row {
     gap: 8px;
