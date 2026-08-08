@@ -48,6 +48,18 @@ export async function startRoomApi(code) {
   return await response.json();
 }
 
+// 対戦設定(先攻後攻・ラウンド数)の保存
+export async function saveRoomSettingsApi(code, firstPlayer, targetScore) {
+  const url = createApiUrl("/api/settings", {
+    code: code,
+    firstPlayer: firstPlayer,
+    targetScore: targetScore
+  });
+
+  const response = await fetch(url);
+  return await response.json();
+}
+
 // ルーム相手状況確認
 export async function checkRoomJoinApi(code, playerId) {
   const url = createApiUrl("/api/checkopponent", {

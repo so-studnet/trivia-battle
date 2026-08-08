@@ -11,7 +11,7 @@ export function initGame(roomInfo) {
   if (initialized) return;
   initialized = true;
 
-  engine = new GameEngine(3, roomInfo);
+  engine = new GameEngine(roomInfo.targetScore || 3, roomInfo);
 
   engine.on("update", (state) => render(state));
   render(engine.getState());
@@ -85,7 +85,7 @@ function renderCardRow(cards) {
 
   cards.forEach((card, i) => {
     const el = document.createElement("div");
-    el.className = "card row-card";
+    el.className = `card row-card ${card.isTrue ? "card-true" : "card-false"}`;
     el.style.setProperty("--start-x", `${-160 * (i + 1)}px`);
     el.style.setProperty("--delay", `${i * 0.12}s`);
     el.innerHTML = `<div class="card-inner"><p class="card-text">${escapeHtml(

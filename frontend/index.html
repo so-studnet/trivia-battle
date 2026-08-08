@@ -39,6 +39,7 @@
   <section id="screen-room" class="screen hidden">
     <div class="panel room-panel">
       <button id="btn-leave-room" class="link-btn" type="button">&larr; タイトルに戻る</button>
+      <button id="btn-open-settings" class="settings-gear-btn" type="button" aria-label="対戦設定" title="対戦設定">&#9881;</button>
 
       <h2 class="room-heading">対戦ルーム</h2>
 
@@ -47,6 +48,8 @@
         <span id="room-code-value" class="room-code-value">------</span>
         <button id="btn-copy-code" class="btn btn-small btn-outline" type="button">コピー</button>
       </div>
+
+      <p id="settings-summary" class="settings-summary">先攻: ランダム ・ ラウンド数: 3</p>
 
       <div id="room-status" class="room-status">
         <span class="spinner" id="room-spinner"></span>
@@ -136,6 +139,35 @@
     <div class="modal-buttons">
       <button id="btn-decide" class="btn btn-decide" type="button">この雑学に決定する</button>
       <button id="btn-cancel" class="btn btn-cancel" type="button">戻る</button>
+    </div>
+  </div>
+
+  <!-- ============ 対戦設定モーダル ============ -->
+  <div id="settings-modal" class="modal hidden">
+    <div class="modal-backdrop"></div>
+    <div class="panel settings-panel">
+      <h2 class="settings-heading">対戦設定</h2>
+
+      <p id="settings-readonly-note" class="settings-note hidden">設定はホストのみ変更できます。</p>
+
+      <fieldset class="settings-field">
+        <legend>先攻</legend>
+        <div class="radio-row">
+          <label><input type="radio" name="first-player" value="A"> <span id="first-player-label-a">ホスト</span></label>
+          <label><input type="radio" name="first-player" value="B"> <span id="first-player-label-b">ゲスト</span></label>
+          <label><input type="radio" name="first-player" value="random"> ランダム</label>
+        </div>
+      </fieldset>
+
+      <div class="field-group settings-field">
+        <label for="input-round-count">ラウンド数(先取点数)</label>
+        <input type="number" id="input-round-count" min="1" max="10" value="3">
+      </div>
+
+      <div class="modal-buttons settings-buttons">
+        <button id="btn-save-settings" class="btn btn-primary" type="button">保存する</button>
+        <button id="btn-close-settings" class="btn btn-cancel" type="button">閉じる</button>
+      </div>
     </div>
   </div>
 

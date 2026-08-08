@@ -22,6 +22,7 @@ public class Server {
         server.createContext("/api/join", Server::handleJoin);
         server.createContext("/api/ready", Server::handleReady);
         server.createContext("/api/start", Server::handleStart);
+        server.createContext("/api/settings", Server::handleSettings);
         server.createContext("/api/checkopponent", Server::handleGetOpponent);
         server.createContext("/api/selectcard", Server::handleSelectCard);
         server.createContext("/api/getcardselection", Server::handleGetCardSelection);
@@ -108,7 +109,40 @@ public class Server {
         }
 
         room.game.isGameStarted = true;
+        room.resolveFirstPlayerIfNeeded();
         respond(ex, "{\"message\":\"Game started in room " + code + "\"}");
+    }
+
+    private static void handleSettings(HttpExchange ex) throws IOException {
+        String query = ex.getRequestURI().getQuery();
+        Map<String, String> params = parseQuery(query);
+        String code = params.get("code");
+        String firstPlayer = params.get("firstPlayer");
+        String targetScoreStr = params.get("targetScore");
+
+        if (code == null || !rooms.containsKey(code)) {
+            respond(ex, "{\"error\":\"Room not found\"}");
+            return;
+        }
+
+        if (firstPlayer == null
+            || !(firstPlayer.equals("A") || firstPlayer.equals("B") || firstPlayer.equals("random"))) {
+            respond(ex, "{\"error\":\"Invalid firstPlayer\"}");
+            return;
+        }
+
+        int targetScore;
+        try {
+            targetScore = Integer.parseInt(targetScoreStr);
+        } catch (Exception e) {
+            targetScore = 3;
+        }
+        if (targetScore < 1) targetScore = 1;
+        if (targetScore > 10) targetScore = 10;
+
+        rooms.get(code).setSettings(firstPlayer, targetScore);
+
+        respond(ex, "{\"firstPlayerMode\":\"" + firstPlayer + "\", \"targetScore\":" + targetScore + "}");
     }
 
     private static void handleGetOpponent(HttpExchange ex) throws IOException {
@@ -134,9 +168,14 @@ public class Server {
         String opponentName = room.getPlayerName(opponentId);
         boolean opponentReady = room.isReady(opponentId);
         boolean gameStarted = room.game.isGameStarted;
+        String resolvedFirstPlayer = room.resolvedFirstPlayer == null ? "" : room.resolvedFirstPlayer;
 
         if (playerCount >= 2) {
-            respond(ex, "{\"opponentJoined\":true, \"opponentName\":\"" + opponentName + "\", \"opponentReady\":" + opponentReady + ", \"gameStarted\":" + gameStarted + "}");
+            respond(ex, "{\"opponentJoined\":true, \"opponentName\":\"" + jsonEscape(opponentName) + "\","
+                + " \"opponentReady\":" + opponentReady + ", \"gameStarted\":" + gameStarted + ","
+                + " \"firstPlayerMode\":\"" + jsonEscape(room.firstPlayerMode) + "\","
+                + " \"targetScore\":" + room.targetScore + ","
+                + " \"resolvedFirstPlayer\":\"" + resolvedFirstPlayer + "\"}");
         }
     }
 

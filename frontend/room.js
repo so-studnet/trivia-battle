@@ -1,5 +1,12 @@
 import { initGame } from "./ui.js";
-import { createRoomApi, joinRoomApi, checkRoomJoinApi, readyRoomApi, startRoomApi } from "./api.js";
+import {
+  createRoomApi,
+  joinRoomApi,
+  checkRoomJoinApi,
+  readyRoomApi,
+  startRoomApi,
+  saveRoomSettingsApi,
+} from "./api.js";
 
 // ルーム画面: タイトル選択 → 対戦ルーム待機 → ゲーム開始
 
@@ -12,6 +19,9 @@ const roomState = {
   opponentName: null,
   opponentJoined: false,
   opponentReady: false,
+  firstPlayerMode: "random", // "A" | "B" | "random"
+  targetScore: 3,
+  resolvedFirstPlayer: null, // "A" | "B"(ゲーム開始時にサーバーが確定)
 };
 
 let roomCheckTimer = null;
@@ -82,6 +92,7 @@ async function joinRoom(name, code) {
 
   showScreen("screen-room");
   renderRoom();
+  updateSettingsSummary();
 
   startRoomCheck();
 }
@@ -98,8 +109,12 @@ function startRoomCheck() {
       roomState.opponentName = data.opponentName;
       roomState.opponentReady = data.opponentReady;
       roomState.gameStarted = data.gameStarted;
+      roomState.firstPlayerMode = data.firstPlayerMode || roomState.firstPlayerMode;
+      roomState.targetScore = data.targetScore || roomState.targetScore;
+      roomState.resolvedFirstPlayer = data.resolvedFirstPlayer || null;
 
       renderRoom();
+      updateSettingsSummary();
 
       if (roomState.gameStarted) {
         stopRoomCheck();
@@ -158,14 +173,28 @@ document.getElementById("btn-start-game").addEventListener("click", () => {
 
 // ---------- 描画 ----------
 
+function getHostName() {
+  return (
+    (roomState.role === "host" ? roomState.selfName : roomState.opponentName) ||
+    "ホスト"
+  );
+}
+
+function getGuestName() {
+  return (
+    (roomState.role === "guest" ? roomState.selfName : roomState.opponentName) ||
+    "ゲスト"
+  );
+}
+
 function renderRoom() {
   document.getElementById("room-code-value").textContent =
     roomState.code || "------";
 
-  const hostName =
-    roomState.role === "host" ? roomState.selfName : roomState.opponentName;
-  const guestName =
-    roomState.role === "guest" ? roomState.selfName : roomState.opponentName;
+  const hostName = getHostName();
+  const guestName = getGuestName();
+  updateFirstPlayerLabels();
+
   const hostReady =
     roomState.role === "host" ? roomState.selfReady : roomState.opponentReady;
   const guestReady =
@@ -219,6 +248,71 @@ function renderRoom() {
 
 }
 
+// ---------- 対戦設定 ----------
+
+const settingsModal = document.getElementById("settings-modal");
+const settingsReadonlyNote = document.getElementById("settings-readonly-note");
+const settingsSummary = document.getElementById("settings-summary");
+const roundCountInput = document.getElementById("input-round-count");
+const btnSaveSettings = document.getElementById("btn-save-settings");
+
+function firstPlayerLabel(mode) {
+  if (mode === "A") return `${getHostName()}さん`;
+  if (mode === "B") return `${getGuestName()}さん`;
+  return "ランダム";
+}
+
+function updateFirstPlayerLabels() {
+  document.getElementById("first-player-label-a").textContent = getHostName();
+  document.getElementById("first-player-label-b").textContent = getGuestName();
+}
+
+function updateSettingsSummary() {
+  settingsSummary.textContent = `先攻: ${firstPlayerLabel(
+    roomState.firstPlayerMode
+  )} ・ ラウンド数: ${roomState.targetScore}`;
+}
+
+document.getElementById("btn-open-settings").addEventListener("click", () => {
+  const isHost = roomState.role === "host";
+
+  updateFirstPlayerLabels();
+  document.querySelectorAll('input[name="first-player"]').forEach((radio) => {
+    radio.checked = radio.value === roomState.firstPlayerMode;
+    radio.disabled = !isHost;
+  });
+  roundCountInput.value = roomState.targetScore;
+  roundCountInput.disabled = !isHost;
+
+  settingsReadonlyNote.classList.toggle("hidden", isHost);
+  btnSaveSettings.classList.toggle("hidden", !isHost);
+
+  settingsModal.classList.remove("hidden");
+});
+
+document.getElementById("btn-close-settings").addEventListener("click", () => {
+  settingsModal.classList.add("hidden");
+});
+
+btnSaveSettings.addEventListener("click", async () => {
+  if (roomState.role !== "host") return;
+
+  const selected = document.querySelector('input[name="first-player"]:checked');
+  const firstPlayer = selected ? selected.value : "random";
+
+  let targetScore = parseInt(roundCountInput.value, 10);
+  if (!Number.isFinite(targetScore)) targetScore = 3;
+  targetScore = Math.min(10, Math.max(1, targetScore));
+
+  const data = await saveRoomSettingsApi(roomState.code, firstPlayer, targetScore);
+
+  roomState.firstPlayerMode = data.firstPlayerMode || firstPlayer;
+  roomState.targetScore = data.targetScore || targetScore;
+  updateSettingsSummary();
+
+  settingsModal.classList.add("hidden");
+});
+
 function setReadyBadge(elId, joined, ready) {
   const el = document.getElementById(elId);
   el.classList.remove("badge-ready", "badge-waiting", "badge-empty");
@@ -242,5 +336,7 @@ function startGame() {
     role: roomState.role,
     selfName: roomState.selfName,
     opponentName: roomState.opponentName,
+    targetScore: roomState.targetScore,
+    firstPlayer: roomState.resolvedFirstPlayer || "A",
   });
 }

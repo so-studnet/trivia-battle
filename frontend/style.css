@@ -104,6 +104,16 @@ body {
   z-index: 10;
 }
 
+.row-card.card-true {
+  border: 2px solid #2b7a4b;
+  background: #eaf6ef;
+}
+
+.row-card.card-false {
+  border: 2px solid #a33333;
+  background: #fbeaea;
+}
+
 @keyframes deal-in {
   from {
     opacity: 0;
@@ -444,9 +454,37 @@ body {
   text-decoration: underline;
 }
 
+.settings-gear-btn {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  background: #fff;
+  color: #555;
+  font-size: 1.1rem;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.settings-gear-btn:hover {
+  background: #f2f2f2;
+  color: #333;
+}
+
 .room-heading {
   margin: 0 0 20px;
   font-size: 1.3rem;
+}
+
+.settings-summary {
+  margin: -8px 0 18px;
+  color: #777;
+  font-size: 0.82rem;
 }
 
 .room-code-box {
@@ -660,13 +698,105 @@ body {
   padding: 30px 0;
 }
 
+/* ---- 対戦設定モーダル ---- */
+
+.settings-panel {
+  position: relative;
+  z-index: 1;
+  width: 340px;
+  max-width: calc(100vw - 40px);
+  text-align: left;
+}
+
+.settings-heading {
+  margin: 0 0 18px;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.settings-note {
+  margin: 0 0 16px;
+  padding: 10px 12px;
+  background: #fdf3e0;
+  color: #a3781f;
+  border-radius: 6px;
+  font-size: 0.82rem;
+}
+
+.settings-field {
+  border: none;
+  padding: 0;
+  margin: 0 0 20px;
+}
+
+.settings-field legend {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 6px;
+  padding: 0;
+}
+
+.settings-field label {
+  display: block;
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.settings-field input[type="number"] {
+  width: 100%;
+  padding: 10px 12px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-family: inherit;
+}
+
+.radio-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.radio-row label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.92rem;
+  color: #333;
+  margin-bottom: 0;
+}
+
+.settings-panel [disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.settings-buttons {
+  justify-content: center;
+  margin-top: 4px;
+}
+
 @media (max-width: 480px) {
   .card-row {
-    gap: 8px;
+    justify-content: flex-start;
+    gap: 12px;
+    height: 210px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
+    padding: 0 24px;
   }
   .row-card {
-    width: 78px;
-    height: 130px;
+    width: 150px;
+    height: 190px;
+    flex-shrink: 0;
+    scroll-snap-align: center;
+  }
+  .row-card:hover {
+    transform: none;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
   }
   .card-large {
     width: 220px;

@@ -5,6 +5,12 @@ public class Room {
     boolean readyPlayer2 = false;
     Game game = new Game();
 
+    // 対戦設定。firstPlayerMode は "A" / "B" / "random"。
+    // ランダムの場合、resolvedFirstPlayer は対戦開始(start)時に一度だけ確定する。
+    String firstPlayerMode = "random";
+    int targetScore = 3;
+    String resolvedFirstPlayer = null;
+
     protected Room(String code){
         this.code = code;
     }
@@ -60,6 +66,22 @@ public class Room {
             return readyPlayer2;
         } else {
             return false;
+        }
+    }
+
+    protected synchronized void setSettings(String firstPlayerMode, int targetScore) {
+        this.firstPlayerMode = firstPlayerMode;
+        this.targetScore = targetScore;
+    }
+
+    protected synchronized void resolveFirstPlayerIfNeeded() {
+        if (resolvedFirstPlayer != null) {
+            return;
+        }
+        if ("random".equals(firstPlayerMode)) {
+            resolvedFirstPlayer = Math.random() < 0.5 ? "A" : "B";
+        } else {
+            resolvedFirstPlayer = firstPlayerMode;
         }
     }
 }

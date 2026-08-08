@@ -23,6 +23,7 @@ export class GameEngine {
     this.selfName = roomInfo.selfName;
     this.opponentName = roomInfo.opponentName;
     this.myLetter = roomInfo.role === "host" ? "A" : "B";
+    this.firstPlayer = roomInfo.firstPlayer === "B" ? "B" : "A";
     this.names =
       this.myLetter === "A"
         ? { A: this.selfName, B: this.opponentName }
@@ -56,8 +57,8 @@ export class GameEngine {
       phase: null,
       scores: { A: 0, B: 0 },
       targetScore: this.targetScore,
-      questioner: "A",
-      guesser: "B",
+      questioner: this.firstPlayer,
+      guesser: this.firstPlayer === "A" ? "B" : "A",
       myLetter: this.myLetter,
       names: this.names,
       turnCards: [],
@@ -75,11 +76,15 @@ export class GameEngine {
   }
 
   // ラウンド開始。自分が出題者ならカードを引いて選択待ち、回答者なら相手の選択をポーリングする。
+  // サーバー側の前ラウンドのカード選択・回答は、出題者側が自分の選択を送る前に
+  // ここで一度だけリセットする(双方が個別にリセットを呼ぶと、片方が先に選択した直後に
+  // もう片方のリセットでその選択が消えてしまい、お互いが待ち状態のまま詰むため)。
   _startRound() {
     this._stopPolling();
     this.state.selectedCard = null;
 
     if (this._isQuestioner()) {
+      nextRoundApi(this.code);
       this._drawTurnCards();
       this.state.phase = "SELECT";
       this._notify();
@@ -193,8 +198,6 @@ export class GameEngine {
   proceedNextTurn() {
     if (this.state.phase !== "TURN_RESULT") return;
 
-    nextRoundApi(this.code);
-
     if (this.state.winner) {
       this.state.phase = "GAME_OVER";
       this._notify();
@@ -210,7 +213,6 @@ export class GameEngine {
   }
 
   restart() {
-    nextRoundApi(this.code);
     this._resetState();
     this._notify();
   }
