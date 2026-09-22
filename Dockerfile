@@ -4,6 +4,6 @@ WORKDIR /app
 
 COPY . .
 
-RUN javac backend/Server.java
+RUN javac backend/*.java
 
 CMD ["java", "-cp", "backend", "Server"]
