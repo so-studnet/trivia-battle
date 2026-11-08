@@ -19,8 +19,8 @@ http://localhost:8080/api
 | `/triviapool`       | GET    | 雑学データを取得する              | なし                                   | 雑学データ（JSON）                                                         |
 | `/selectcard`       | POST   | 選択したカードを登録する            | `code`, `playerId`, `cardId`         | メッセージ                                                               |
 | `/getcardselection` | GET    | 対戦相手が選択したカードを取得する       | `code`, `playerId`                   | `cardId`                                                            |
-| `/answercard`       | POST   | カードの正誤結果を登録する           | `code`, `playerId`, `isCorrect`      | メッセージ                                                               |
-| `/getcardanswer`    | GET    | 対戦相手の正誤結果を取得する          | `code`, `playerId`                   | `isCorrect`                                                         |
+| `/answercard`       | POST   | カードの正誤結果と賭け点数を登録する      | `code`, `playerId`, `isCorrect`, `bet`（1〜3、省略時1） | メッセージ                                                               |
+| `/getcardanswer`    | GET    | 対戦相手の正誤結果と賭け点数を取得する     | `code`, `playerId`                   | `isCorrect`, `bet`                                                  |
 | `/next`             | POST   | 次のラウンドへ進み、ラウンド情報をリセットする | `code`                               | メッセージ                                                               |
 | `/admin/rooms`      | GET    | 現在の全ルーム情報を取得する          | なし                                   | ルーム情報（JSON）                                                         |
 
@@ -37,7 +37,7 @@ http://localhost:8080/api
 | 雑学データ取得    | `GET /api/triviapool`                                           |
 | カード選択      | `POST /api/selectcard?code=7080&playerId=1&cardId=1`            |
 | カード選択結果を取得 | `GET /api/getcardselection?code=7080&playerId=1`                |
-| 正誤回答を登録    | `POST /api/answercard?code=7080&playerId=2&isCorrect=true`      |
+| 正誤回答を登録    | `POST /api/answercard?code=7080&playerId=2&isCorrect=true&bet=2` |
 | 正誤結果を取得    | `GET /api/getcardanswer?code=7080&playerId=2`                   |
 | 次のラウンドへ進む  | `POST /api/next?code=7080`                                      |
 | 全ルーム情報を取得  | `GET /api/admin/rooms`                                          |

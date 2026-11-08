@@ -61,6 +61,7 @@ function renderPhase(state) {
       turnIndicator.textContent = "あなたが回答者です";
       document.getElementById("phase-guess").classList.remove("hidden");
       renderGuessCard(state.selectedCard);
+      renderBetButtons(state.bet);
       break;
     case "WAIT_GUESS":
       turnIndicator.textContent = `${opponentName}さんが回答者です`;
@@ -133,6 +134,16 @@ function renderGuessCard(card) {
   )}</p></div>`;
 }
 
+function renderBetButtons(bet) {
+  document.querySelectorAll("#bet-buttons .bet-btn").forEach((btn) => {
+    btn.classList.toggle("selected", Number(btn.dataset.bet) === bet);
+  });
+}
+
+document.querySelectorAll("#bet-buttons .bet-btn").forEach((btn) => {
+  btn.addEventListener("click", () => engine.setBet(btn.dataset.bet));
+});
+
 document
   .getElementById("btn-true")
   .addEventListener("click", () => engine.submitGuess(true));
@@ -141,9 +152,9 @@ document
   .addEventListener("click", () => engine.submitGuess(false));
 
 function renderTurnResult(result, state) {
-  document.getElementById("result-heading").textContent = result.correct
-    ? "正解！"
-    : "不正解…";
+  document.getElementById("result-heading").textContent = `${
+    result.correct ? "正解！" : "不正解…"
+  }（${result.bet}点賭け）`;
   document.getElementById(
     "result-card"
   ).innerHTML = `<div class="card-inner"><p class="card-text">${escapeHtml(
@@ -156,7 +167,7 @@ function renderTurnResult(result, state) {
     result.guess ? "本当" : "ウソ"
   } / ${nameOf(result.scorer, state)}さん${
     scorerIsMe ? "（あなた）" : ""
-  }に1点）`;
+  }に${result.bet}点）`;
   document.getElementById("result-explanation").textContent =
     result.explanation;
 }
@@ -201,9 +212,9 @@ function showResultScreen(state) {
       <p class="history-turn">第${i + 1}問: ${escapeHtml(h.text)}</p>
       <p class="history-answer">答え: ${
         h.isTrue ? "本当" : "ウソ"
-      } ／ 結果: ${h.correct ? "正解" : "不正解"}（${escapeHtml(
+      } ／ 結果: ${h.correct ? "正解" : "不正解"}・${h.bet}点賭け（${escapeHtml(
       nameOf(h.scorer, state)
-    )}さんに1点）</p>
+    )}さんに${h.bet}点）</p>
       <p class="history-explanation">${escapeHtml(h.explanation)}</p>
     `;
     historyList.appendChild(item);

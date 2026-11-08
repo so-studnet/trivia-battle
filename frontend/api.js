@@ -98,11 +98,12 @@ export async function getCardSelectionApi(code, playerId) {
 
 
 // 回答送信
-export async function answerCardApi(code, playerId, isCorrect) {
+export async function answerCardApi(code, playerId, isCorrect, bet) {
   const url = createApiUrl("/api/answercard", {
     code: code,
     playerId: playerId,
-    isCorrect: isCorrect
+    isCorrect: isCorrect,
+    bet: bet
   });
 
   const response = await fetch(url);
@@ -137,4 +138,4 @@ export async function nextRoundApi(code) {
 export async function fetchAdminRooms() {
   const response = await fetch("/api/admin/rooms");
   return await response.json();
-}
+}

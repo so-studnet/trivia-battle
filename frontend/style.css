@@ -144,6 +144,39 @@ body {
   gap: 20px;
 }
 
+.bet-area {
+  margin-bottom: 16px;
+}
+
+.bet-label {
+  margin: 0 0 8px;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.bet-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.btn.bet-btn {
+  margin-top: 0;
+  padding: 8px 18px;
+  background: #fff;
+  color: #333;
+  border: 2px solid #c9a227;
+}
+
+.btn.bet-btn:hover {
+  background: #fdf3d2;
+}
+
+.btn.bet-btn.selected {
+  background: #c9a227;
+  color: #fff;
+}
+
 .result-answer {
   font-weight: bold;
   margin: 0 0 8px;
