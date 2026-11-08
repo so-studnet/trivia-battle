@@ -9,13 +9,19 @@ public class Game {
     String player2Name;
     private Map<String, String> cardSelection = new HashMap<>();
     private Map<String, Boolean> cardAnswer = new HashMap<>();
+    private Map<String, Integer> cardBet = new HashMap<>();
 
     protected synchronized void setCardSelection(String playerId, String cardId) {
         cardSelection.put(playerId, cardId);
     }
 
-    protected synchronized void setCardAnswer(String playerId, boolean isCorrect) {
+    protected synchronized void setCardAnswer(String playerId, boolean isCorrect, int bet) {
         cardAnswer.put(playerId, isCorrect);
+        cardBet.put(playerId, bet);
+    }
+
+    protected synchronized Integer getCardBet(String playerId) {
+        return cardBet.get(playerId);
     }
 
     protected synchronized String getCardSelection(String playerId) {
@@ -47,5 +53,6 @@ public class Game {
     protected synchronized void resetRound() {
         cardSelection.clear();
         cardAnswer.clear();
+        cardBet.clear();
     }
 }

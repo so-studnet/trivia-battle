@@ -241,7 +241,8 @@ public class Server {
         }
 
         boolean isCorrect = Boolean.parseBoolean(isCorrectStr);
-        rooms.get(code).game.setCardAnswer(playerId, isCorrect);
+        int bet = parseBet(params.get("bet"));
+        rooms.get(code).game.setCardAnswer(playerId, isCorrect, bet);
 
         respond(ex, "{\"message\":\"Card answer recorded\"}");
     }
@@ -265,8 +266,22 @@ public class Server {
 
         String opponentId = rooms.get(code).game.opponentId(playerId);
         Boolean isCorrect = rooms.get(code).game.getCardAnswer(opponentId);
+        Integer bet = rooms.get(code).game.getCardBet(opponentId);
 
-        respond(ex, "{\"isCorrect\":" + isCorrect + "}");
+        respond(ex, "{\"isCorrect\":" + isCorrect + ", \"bet\":" + bet + "}");
+    }
+
+    // 賭け点数(1〜3)。未指定・不正な値は1点として扱う。
+    private static int parseBet(String betStr) {
+        if (betStr == null) {
+            return 1;
+        }
+        try {
+            int bet = Integer.parseInt(betStr);
+            return Math.max(1, Math.min(3, bet));
+        } catch (NumberFormatException e) {
+            return 1;
+        }
     }
 
     private static void handleNext(HttpExchange ex) throws IOException {
@@ -384,4 +399,4 @@ public class Server {
         ex.sendResponseHeaders(200, data.length);
         try (OutputStream os = ex.getResponseBody()) { os.write(data); }
     }
-}
+}

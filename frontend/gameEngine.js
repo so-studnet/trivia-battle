@@ -15,6 +15,10 @@ export const TRIVIA_POOL = await fetchTriviaPool();
 
 const POLL_INTERVAL_MS = 500;
 
+// 回答者が賭けられる点数(自信度)の範囲。
+export const MIN_BET = 1;
+export const MAX_BET = 3;
+
 export class GameEngine {
   constructor(targetScore = 3, roomInfo) {
     this.targetScore = targetScore;
@@ -63,6 +67,7 @@ export class GameEngine {
       names: this.names,
       turnCards: [],
       selectedCard: null,
+      bet: MIN_BET,
       lastTurnResult: null,
       history: [],
       usedIds: new Set(),
@@ -82,6 +87,7 @@ export class GameEngine {
   _startRound() {
     this._stopPolling();
     this.state.selectedCard = null;
+    this.state.bet = MIN_BET;
 
     if (this._isQuestioner()) {
       nextRoundApi(this.code);
@@ -140,14 +146,24 @@ export class GameEngine {
     }, POLL_INTERVAL_MS);
   }
 
-  // 回答者: 本当/ウソを回答し、正誤をAPIへ送信する。
+  // 回答者: 賭ける点数(自信度)を選ぶ。
+  setBet(bet) {
+    if (this.state.phase !== "GUESS") return;
+    const value = Number(bet);
+    if (!Number.isInteger(value) || value < MIN_BET || value > MAX_BET) return;
+    this.state.bet = value;
+    this._notify();
+  }
+
+  // 回答者: 本当/ウソと賭け点数を回答し、正誤をAPIへ送信する。
   submitGuess(guessIsTrue) {
     if (this.state.phase !== "GUESS") return;
     const card = this.state.selectedCard;
     const correct = guessIsTrue === card.isTrue;
+    const bet = this.state.bet;
 
-    this._applyTurnResult({ guess: guessIsTrue, correct, card });
-    answerCardApi(this.code, this.selfId, correct);
+    this._applyTurnResult({ guess: guessIsTrue, correct, card, bet });
+    answerCardApi(this.code, this.selfId, correct, bet);
   }
 
   // 出題者: 相手の回答(正誤)が届くまでポーリングする。
@@ -161,14 +177,16 @@ export class GameEngine {
       const card = this.state.selectedCard;
       const correct = data.isCorrect;
       const guess = correct ? card.isTrue : !card.isTrue;
+      const bet = Number(data.bet) || MIN_BET;
 
-      this._applyTurnResult({ guess, correct, card });
+      this._applyTurnResult({ guess, correct, card, bet });
     }, POLL_INTERVAL_MS);
   }
 
-  _applyTurnResult({ guess, correct, card }) {
+  // 正解なら回答者に、不正解なら出題者に、賭けた点数が入る。
+  _applyTurnResult({ guess, correct, card, bet }) {
     const scorer = correct ? this.state.guesser : this.state.questioner;
-    this.state.scores[scorer] += 1;
+    this.state.scores[scorer] += bet;
 
     const turnRecord = {
       text: card.text,
@@ -176,6 +194,7 @@ export class GameEngine {
       explanation: card.explanation,
       guess,
       correct,
+      bet,
       scorer,
       questioner: this.state.questioner,
       guesser: this.state.guesser,
@@ -187,8 +206,8 @@ export class GameEngine {
       this.state.scores.A >= this.state.targetScore ||
       this.state.scores.B >= this.state.targetScore
     ) {
-      this.state.winner =
-        this.state.scores.A > this.state.scores.B ? "A" : "B";
+      // 得点が入るのは1ターンに1人だけなので、目標に届いたのはこのターンの得点者。
+      this.state.winner = scorer;
     }
 
     this.state.phase = "TURN_RESULT";
